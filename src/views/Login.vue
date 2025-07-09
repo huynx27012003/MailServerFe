@@ -42,12 +42,19 @@
           </el-button>
         </el-form-item>
       </el-form>
+
+      <hr />
+
+      <!-- 🔐 Đăng nhập bằng LaoID -->
+      <el-button id="laoid-signin" type="primary">
+        Đăng nhập bằng LaoID
+      </el-button>
     </el-card>
   </div>
 </template>
 
 <script>
-import { login, getUserFromToken, register } from "@/api/auth";
+import { login, getCurrentUser } from "@/api/auth";
 import Cookies from "js-cookie";
 import { mapMutations } from "vuex";
 
@@ -69,10 +76,6 @@ export default {
         password: "",
         confirmPassword: "",
       },
-      accounts: [
-        { username: "admin", password: "123456", role: "admin" },
-        { username: "user", password: "123456", role: "user" },
-      ],
       loginRules: {
         username: [
           {
@@ -130,39 +133,23 @@ export default {
         this.isLoading = true;
 
         try {
-          if (this.isSignUp) {
-            // Xử lý đăng ký
-            await register(this.form.username, this.form.password);
-            this.$message.success("Đăng ký thành công! Vui lòng đăng nhập.");
-            this.toggleMode();
-          } else {
-            // Xử lý đăng nhập
-            const { token } = await login(
-              this.form.username,
-              this.form.password
-            );
-            // Lưu token vào cookie
-            Cookies.set("token", token);
-            // Gọi API decode token để lấy thông tin user
-            const userInfo = await getUserFromToken(token);
-            // Lưu vào Vuex
-            this.setAuthenticated(true);
-            this.setUser(userInfo);
-            this.$router.replace({ name: "HomeView" });
-          }
+          const { token } = await login(this.form.username, this.form.password);
+          Cookies.set("token", token);
+
+          const userInfo = await getCurrentUser();
+
+          const fixedUser = {
+            ...userInfo,
+            username: userInfo.username || userInfo.user || this.form.username,
+          };
+
+          this.setAuthenticated(true);
+          this.setUser(fixedUser);
+
+          this.$router.replace({ name: "HomeView" });
         } catch (err) {
           console.error("Auth error:", err);
-          if (this.isSignUp) {
-            // Xử lý lỗi đăng ký
-            if (err.response && err.response.status === 409) {
-              this.$message.error("Tên đăng nhập đã tồn tại!");
-            } else {
-              this.$message.error("Đăng ký thất bại! Vui lòng thử lại.");
-            }
-          } else {
-            // Xử lý lỗi đăng nhập
-            this.$message.error("Sai tài khoản hoặc mật khẩu!");
-          }
+          this.$message.error("Sai tài khoản hoặc mật khẩu!");
         } finally {
           this.isLoading = false;
         }
@@ -170,7 +157,6 @@ export default {
     },
     toggleMode() {
       this.isSignUp = !this.isSignUp;
-      // Reset form khi chuyển mode
       this.form.username = "";
       this.form.password = "";
       this.form.confirmPassword = "";
@@ -178,6 +164,46 @@ export default {
         if (this.$refs.loginFormRef) this.$refs.loginFormRef.clearValidate();
       });
     },
+  },
+  mounted() {
+    const script = document.createElement("script");
+    script.src = "https://demo-sso.tinasoft.io/laoid.auth.js";
+    script.async = true;
+    document.body.appendChild(script);
+
+    this.$nextTick(() => {
+      const retrySSO = () => {
+        console.log("⏳ Thử lại gọi initializeSSO sau 500ms...");
+        if (window.initializeSSO) {
+          window.initializeSSO();
+        }
+      };
+
+      const tryBindSSO = () => {
+        const btn = document.getElementById("laoid-signin");
+
+        if (btn && window.openSSO) {
+          console.log("✅ Tự gắn openSSO thủ công");
+          btn.removeEventListener("click", window.openSSO);
+          btn.addEventListener("click", window.openSSO);
+        }
+      };
+
+      const checkAndInit = () => {
+        const btn = document.getElementById("laoid-signin");
+        if (window.initializeSSO && btn) {
+          console.log("✅ Tìm thấy nút laoid-signin, gọi initializeSSO()");
+          window.initializeSSO();
+          tryBindSSO(); // ép gắn nếu SDK không gắn
+          setTimeout(retrySSO, 500); // fallback lần nữa
+        } else {
+          console.warn("⏳ Chưa sẵn sàng, thử lại sau...");
+          setTimeout(checkAndInit, 200);
+        }
+      };
+
+      checkAndInit();
+    });
   },
 };
 </script>

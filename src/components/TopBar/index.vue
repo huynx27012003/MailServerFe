@@ -16,8 +16,8 @@
       </div>
 
       <div class="right-bar">
-        <span v-if="$store.state.user" class="greeting">
-          Xin chào, <b>{{ $store.state.user.username }}</b>
+        <span v-if="normalizedUser" class="greeting">
+          Xin chào, <b>{{ normalizedUser.username }}</b>
         </span>
         <el-dropdown @command="handleCommand" trigger="click">
           <div
@@ -43,11 +43,7 @@
                 <i style="font-size: 19px" class="fa-solid fa-wrench"></i>
                 Config Server
               </el-dropdown-item>
-              <el-dropdown-item
-                v-if="$store.state.isAuthenticated"
-                command="logout"
-                divided
-              >
+              <el-dropdown-item v-if="isAuthenticated" command="logout" divided>
                 <i
                   style="font-size: 19px"
                   class="fa-solid fa-right-from-bracket"
@@ -99,10 +95,23 @@ export default {
     };
   },
   computed: {
-    ...mapState(["serverAddr"]),
+    ...mapState(["serverAddr", "user", "isAuthenticated"]),
+    normalizedUser() {
+      // Nếu user là object và có username
+      if (this.user && typeof this.user === "object" && this.user.username) {
+        return this.user;
+      }
+      // Nếu user là chuỗi (ví dụ: "you")
+      if (typeof this.user === "string") {
+        return { username: this.user };
+      }
+      return null;
+    },
   },
   mounted() {
     this.formConfig.domain = this.serverAddr;
+    console.log("✅ TopBar mounted. Raw user:", this.user);
+    console.log("✅ Normalized user:", this.normalizedUser);
   },
   methods: {
     handleCommand(command) {
@@ -112,7 +121,7 @@ export default {
       }
       if (command === "logout") {
         this.$store.commit("logout");
-        Cookies.remove("token"); // Xóa token khỏi cookie
+        Cookies.remove("token");
         this.$router.replace({ name: "login" });
         this.$message.success("Đăng xuất thành công!");
       }

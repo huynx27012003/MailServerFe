@@ -1,106 +1,62 @@
 <template>
-  <div class="home-container">
-    <!-- User list -->
-    <div
-      class="user-list-section"
-      style="margin-left: 300px; margin-top: 100px"
-    >
-      <h3>Danh sách người dùng</h3>
-      <el-button
-        type="success"
-        size="small"
-        @click="showAddDialog = true"
-        style="margin-bottom: 10px"
-      >
-        Thêm user
-      </el-button>
-      <table class="cim-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Username</th>
-            <th>Role</th>
-            <th>Thao tác</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="user in userList" :key="user.id">
-            <td>{{ user.id }}</td>
-            <td>{{ user.username }}</td>
-            <td>{{ user.role }}</td>
-            <td>
-              <el-button size="small" @click="openEditDialog(user)"
-                >Sửa</el-button
-              >
-              <el-button
-                size="small"
-                type="danger"
-                @click="handleDeleteUser(user.id)"
-                >Xóa</el-button
-              >
-              <el-button
-                size="small"
-                type="warning"
-                @click="openChangePasswordDialog(user)"
-                >Đổi mật khẩu</el-button
-              >
-            </td>
-          </tr>
-        </tbody>
-      </table>
+  <div class="mail-container">
+    <div class="main-content">
+      <aside class="sidebar">
+        <h3>📥 Inbox</h3>
+        <el-button
+          type="primary"
+          size="small"
+          @click="dialogSend = true"
+          style="margin-bottom: 10px"
+        >
+          ✉️ Gửi Mail
+        </el-button>
+        <ul class="mail-list">
+          <li
+            v-for="mail in mailList"
+            :key="mail.uid"
+            @click="selectMail(mail.uid)"
+            :class="{ active: mail.uid === selectedId }"
+          >
+            <strong>{{ mail.subject }}</strong
+            ><br />
+            <span>{{ mail.from }}</span
+            ><br />
+            <small>{{ mail.date }}</small>
+          </li>
+        </ul>
+        <pre v-if="mailList.length === 0">📭 Chưa có email nào</pre>
+      </aside>
+
+      <main class="mail-content" v-if="mailDetail">
+        <h2>{{ mailDetail.subject }}</h2>
+        <p><strong>From:</strong> {{ mailDetail.from }}</p>
+        <!-- <p><strong>To:</strong> {{ mailDetail.to }}</p> -->
+        <p><strong>Date:</strong> {{ mailDetail.date }}</p>
+        <hr />
+        <pre class="mail-body">{{ mailDetail.body }}</pre>
+      </main>
     </div>
 
-
-    <el-dialog v-model="showAddDialog" title="Thêm user mới" width="400px">
-      <el-form :model="addForm">
-        <el-form-item label="Username">
-          <el-input v-model="addForm.username" autocomplete="off"></el-input>
-        </el-form-item>
-        <el-form-item label="Password">
+    <!-- Dialog gửi mail -->
+    <el-dialog v-model="dialogSend" title="Gửi Email" width="500px">
+      <el-form :model="sendForm" label-width="80px">
+        <el-form-item label="To">
           <el-input
-            v-model="addForm.password"
-            type="password"
-            autocomplete="off"
-          ></el-input>
+            v-model="sendForm.to"
+            placeholder="Tên người nhận (không cần @domain)"
+          />
+        </el-form-item>
+        <el-form-item label="Subject">
+          <el-input v-model="sendForm.subject" />
+        </el-form-item>
+        <el-form-item label="Body">
+          <el-input type="textarea" v-model="sendForm.body" :rows="6" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="showAddDialog = false">Hủy</el-button>
-        <el-button type="primary" @click="handleAddUser">Thêm</el-button>
-      </template>
-    </el-dialog>
-
-
-    <el-dialog v-model="showEditDialog" title="Sửa username" width="400px">
-      <el-form :model="editForm">
-        <el-form-item label="Username">
-          <el-input v-model="editForm.username" autocomplete="off"></el-input>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="showEditDialog = false">Hủy</el-button>
-        <el-button type="primary" @click="handleEditUser">Lưu</el-button>
-      </template>
-    </el-dialog>
-
-    <!-- Dialog Đổi mật khẩu -->
-    <el-dialog
-      v-model="showChangePasswordDialog"
-      title="Đổi mật khẩu"
-      width="400px"
-    >
-      <el-form :model="changePasswordForm">
-        <el-form-item label="Mật khẩu mới">
-          <el-input
-            v-model="changePasswordForm.newPassword"
-            type="password"
-            autocomplete="off"
-          ></el-input>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="showChangePasswordDialog = false">Hủy</el-button>
-        <el-button type="primary" @click="handleChangePassword">Đổi</el-button>
+        <el-button @click="dialogSend = false">Hủy</el-button>
+        <el-button type="primary" @click="onSendMail">Gửi</el-button>
       </template>
     </el-dialog>
   </div>
@@ -108,159 +64,139 @@
 
 <script>
 import {
-  updateUsername,
-  getUsers,
-  register,
-  deleteUser,
-  updatePassword,
-} from "@/api/auth";
+  getCurrentUser,
+  getMailDetail,
+  sendMail,
+  connectMailRealtime,
+  disconnectMailRealtime,
+} from "@/api/auth"; // connectMailRealtime đã thêm từ trước
+import Cookies from "js-cookie";
 
 export default {
-  name: "Home",
+  name: "MailView",
   data() {
     return {
-      userList: [],
-      showAddDialog: false,
-      showEditDialog: false,
-      showChangePasswordDialog: false,
-      addForm: {
-        username: "",
-        password: "",
+      user: null,
+      mailList: [],
+      selectedId: null,
+      mailDetail: null,
+      dialogSend: false,
+      sendForm: {
+        to: "",
+        subject: "",
+        body: "",
       },
-      editForm: {
-        id: null,
-        username: "",
-      },
-      changePasswordForm: {
-        newPassword: "",
-      },
-      changePasswordUser: null,
     };
   },
   async mounted() {
-    await this.fetchUsers();
+    try {
+      this.user = await getCurrentUser();
+      console.log("✅ Current user:", this.user);
+
+      // ✅ Kết nối WebSocket để nhận realtime mail list
+      connectMailRealtime(
+        (data) => {
+          this.mailList = data.emails || data || [];
+          if (this.selectedId) {
+            // Nếu đang xem 1 email cụ thể thì giữ nguyên nội dung đó
+            const stillExist = this.mailList.some(
+              (m) => m.uid === this.selectedId
+            );
+            if (!stillExist) this.mailDetail = null;
+          }
+        },
+        () => {
+          this.$message.warning("🔌 Mất kết nối realtime đến mail server");
+        }
+      );
+    } catch (e) {
+      console.error("❌ Lỗi tải user/mail:", e);
+      this.$message.error("Lỗi tải hộp thư");
+    }
+  },
+  beforeUnmount() {
+    disconnectMailRealtime(); // ✅ Ngắt kết nối WS khi rời khỏi
   },
   methods: {
-    async fetchUsers() {
-      const res = await getUsers();
-      this.userList = res.users || [];
+    async selectMail(uid) {
+      try {
+        this.selectedId = uid;
+        const res = await getMailDetail(uid);
+        this.mailDetail = res;
+      } catch (err) {
+        console.error("❌ Lỗi tải nội dung mail:", err);
+        this.$message.error("Không thể tải nội dung email");
+      }
     },
-    async handleAddUser() {
-      if (!this.addForm.username.trim() || !this.addForm.password.trim()) {
-        this.$message.error("Vui lòng nhập đầy đủ thông tin");
+    async onSendMail() {
+      if (!this.sendForm.to || !this.sendForm.subject || !this.sendForm.body) {
+        this.$message.warning("Vui lòng điền đầy đủ thông tin");
         return;
       }
       try {
-        await register(
-          this.addForm.username.trim(),
-          this.addForm.password.trim()
-        );
-        this.$message.success("Thêm user thành công!");
-        this.showAddDialog = false;
-        this.addForm.username = "";
-        this.addForm.password = "";
-        await this.fetchUsers();
-      } catch (e) {
-        this.$message.error("Thêm user thất bại!");
+        const res = await sendMail(this.sendForm);
+        this.$message.success(res.message || "Gửi mail thành công");
+        this.dialogSend = false;
+        this.sendForm = { to: "", subject: "", body: "" };
+        // Không cần fetch lại, vì WS sẽ tự cập nhật
+      } catch (err) {
+        this.$message.error("❌ Không gửi được email");
       }
     },
-    openEditDialog(user) {
-      this.editForm.id = user.id;
-      this.editForm.username = user.username;
-      this.showEditDialog = true;
-    },
-    async handleEditUser() {
-      if (!this.editForm.username.trim()) {
-        this.$message.error("Vui lòng nhập username mới");
-        return;
-      }
-      try {
-        await updateUsername(this.editForm.id, this.editForm.username.trim());
-        this.$message.success("Cập nhật thành công!");
-        this.showEditDialog = false;
-        await this.fetchUsers();
-      } catch (e) {
-        this.$message.error("Cập nhật thất bại!");
-      }
-    },
-    async handleDeleteUser(id) {
-      this.$confirm("Bạn có chắc muốn xóa user này?", "Xác nhận", {
-        confirmButtonText: "Xóa",
-        cancelButtonText: "Hủy",
-        type: "warning",
-      })
-        .then(async () => {
-          try {
-            await deleteUser(id);
-            this.$message.success("Xóa user thành công!");
-            await this.fetchUsers();
-          } catch (e) {
-            this.$message.error("Xóa user thất bại!");
-          }
-        })
-        .catch(() => {});
-    },
-    openChangePasswordDialog(user) {
-      this.changePasswordUser = user;
-      this.changePasswordForm.newPassword = "";
-      this.showChangePasswordDialog = true;
-    },
-    async handleChangePassword() {
-      if (!this.changePasswordForm.newPassword) {
-        this.$message.error("Vui lòng nhập mật khẩu mới");
-        return;
-      }
-      try {
-        await updatePassword(
-          this.changePasswordUser.id,
-          this.changePasswordForm.newPassword
-        );
-        this.$message.success("Đổi mật khẩu thành công!");
-        this.showChangePasswordDialog = false;
-        this.changePasswordForm.newPassword = "";
-      } catch (e) {
-        this.$message.error("Đổi mật khẩu thất bại!");
-      }
+    logout() {
+      Cookies.remove("token");
+      this.$router.replace({ name: "Login" });
     },
   },
 };
 </script>
 
 <style scoped>
-.home-container {
-  min-height: 100vh;
-  background: #fff;
-  color: #333;
-  max-width: 1400px;
-  margin: 0 auto;
-  position: relative;
+.mail-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  font-family: sans-serif;
 }
 
-.user-list-section {
-  margin-left: 500px;
-  margin-top: 100px;
+.main-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
 }
 
-.cim-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 12px;
-  background: white;
-  border: 1px solid #ddd;
+.sidebar {
+  width: 300px;
+  background: #f7f7f7;
+  border-right: 1px solid #ccc;
+  padding: 20px;
+  overflow-y: auto;
 }
 
-.cim-table th,
-.cim-table td {
+.mail-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.mail-list li {
+  cursor: pointer;
   padding: 10px;
   border-bottom: 1px solid #ddd;
 }
 
-.cim-table th {
-  background: #f5f5f5;
-  text-align: left;
+.mail-list li.active {
+  background-color: #e0f3ff;
 }
 
-.cim-table tr:hover {
-  background-color: #f9f9f9;
+.mail-content {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.mail-body {
+  white-space: pre-wrap;
+  font-family: monospace;
 }
 </style>

@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import store from '../store'
 import Layout from '../layout/index.vue'
 import HomeView from '../views/HomeView.vue'
-
+import LaoIDCallback from '../views/LaoIDCallback.vue'
 import Login from '../views/Login.vue'
 
 const routes = [
@@ -21,8 +21,12 @@ const routes = [
         name: 'login',
         component: Login
       },
-    
-    ]
+    ],
+  },
+  {
+    path: '/laoid/auth/callback', 
+    name: 'LaoIDCallback',
+    component: LaoIDCallback
   }
 ]
 

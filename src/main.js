@@ -6,7 +6,7 @@ import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
 import store from './store'
 import Cookies from 'js-cookie'
-import { getUserFromToken } from '@/api/auth'
+import { getCurrentUser } from '@/api/auth'
 
 function bootstrapApp() {
   const app = createApp(App)
@@ -18,10 +18,10 @@ function bootstrapApp() {
 
 const token = Cookies.get('token')
 if (token) {
-  getUserFromToken(token)
+  getCurrentUser()
     .then(userInfo => {
       store.commit('setAuthenticated', true)
-      store.commit('setUser', userInfo)
+      store.commit('setUser', userInfo.user) // response có dạng { user: 'user1' }
       bootstrapApp()
     })
     .catch(() => {
