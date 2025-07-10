@@ -144,7 +144,8 @@ export default {
 
 <style lang="scss" scoped>
 nav {
-  background-color: #012596;
+  background-color: transparent !important; /* hoàn toàn trong suốt */
+  // backdrop-filter: blur(6px); /* mờ nhẹ phần nền phía sau */
   height: 50px;
   width: 100vw;
   position: fixed;
@@ -153,8 +154,8 @@ nav {
   justify-content: space-between;
   align-items: center;
   -webkit-app-region: drag;
-  border-bottom: 1px solid #aeb6bf;
-  overflow: visible;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15); /* viền mờ nhẹ */
+  z-index: 9999;
 }
 
 .left-bar,
@@ -162,29 +163,14 @@ nav {
 .right-bar {
   display: flex;
   align-items: center;
-}
-
-.left-bar {
-  z-index: 10;
-  width: 15%;
-  min-width: 80px;
-}
-
-.center-bar {
-  width: 70%;
-  justify-content: center;
-}
-
-.right-bar {
-  width: 15%;
-  min-width: 80px;
-  justify-content: flex-end;
+  background-color: transparent; /* cũng trong suốt */
 }
 
 .logo-container {
   border-radius: 12px;
-  transition: background 0.2s, box-shadow 0.2s;
   padding: 10px 8px;
+  background-color: transparent; /* trong suốt */
+  transition: background 0.2s, box-shadow 0.2s;
   display: flex;
   align-items: center;
 }
@@ -194,7 +180,18 @@ nav {
   margin-right: 12px;
   font-size: 15px;
   font-weight: 500;
-  letter-spacing: 0.5px;
   white-space: nowrap;
+  background-color: transparent;
+}
+
+.el-dropdown {
+  background-color: transparent;
+}
+
+.el-dropdown-menu {
+  background-color: rgba(30, 30, 30, 0.9); /* tối và mờ nhẹ */
+  backdrop-filter: blur(4px);
+  border-radius: 8px;
+  border: none;
 }
 </style>

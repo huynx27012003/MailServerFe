@@ -19,7 +19,7 @@
             🔍 Tìm
           </el-button>
         </div>
-        <h3>📥 Inbox</h3>
+
         <ul class="mail-list">
           <li
             v-for="mail in mailList"
@@ -318,82 +318,183 @@ export default {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  font-family: sans-serif;
+  font-family: Roboto, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 15px;
+  background-color: transparent !important;
+  overflow-y: hidden !important;
+  color: white; /* ✅ Toàn bộ chữ trắng */
 }
 
 .main-content {
   display: flex;
   flex: 1;
-  overflow: hidden;
+  overflow: hidden !important;
+  background-color: transparent !important;
+  height: 100%;
+  margin-top: auto;
 }
 
 .sidebar {
-  width: 300px;
-  background: #f7f7f7;
-  border-right: 1px solid #ccc;
+  width: 320px;
+  background-color: transparent !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
   padding: 20px;
-  overflow-y: auto;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: 100%;
 }
 
 .search-container {
   display: flex;
-  gap: 10px;
-  margin-bottom: 15px;
+  gap: 8px;
+  margin-top: 12px;
+  flex-shrink: 0;
 }
 
 .mail-list {
   list-style: none;
   padding: 0;
   margin: 0;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  backdrop-filter: blur(2px);
 }
 
 .mail-list li {
   cursor: pointer;
-  padding: 10px;
-  border-bottom: 1px solid #ddd;
+  padding: 14px 12px;
+  border-radius: 10px;
+  transition: background-color 0.2s ease;
+  margin-bottom: 8px;
+  background-color: transparent !important;
+  box-shadow: none;
+  font-size: 14.5px;
+  line-height: 1.5;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.mail-list li:hover {
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
 .mail-list li.active {
-  background-color: #e0f3ff;
+  background-color: rgba(255, 255, 255, 0.1);
+  font-weight: 600;
 }
 
 .mail-content {
-  flex: 1;
-  padding: 20px;
-  overflow-y: auto;
+  flex: 0.9;
+  padding: 24px;
+  background-color: transparent !important;
+  overflow-y: hidden;
+  color: white;
+  backdrop-filter: blur(1.5px);
+  height: 90vh;
+  margin-top: 20px;
 }
 
 .mail-body {
   white-space: pre-wrap;
-  font-family: monospace;
+  font-family: "Roboto Mono", monospace;
+  font-size: 14.5px;
+  line-height: 1.6;
+  margin-top: 16px;
+  background-color: transparent !important;
+  color: white;
 }
 
 .attachments {
-  margin-top: 20px;
-  padding: 15px;
-  background: #f9f9f9;
-  border-radius: 5px;
+  margin-top: 24px;
+  padding: 16px;
+  background: transparent !important;
+  border-radius: 8px;
+  border: 1px dashed rgba(255, 255, 255, 0.3);
+  color: white;
 }
 
 .attachment-list {
   list-style: none;
   padding: 0;
-  margin: 10px 0 0 0;
+  margin-top: 12px;
+  color: white;
 }
 
 .attachment-list li {
-  margin: 5px 0;
+  margin: 6px 0;
+  color: white;
 }
 
 .el-upload__tip {
-  color: #999;
-  font-size: 12px;
+  color: white;
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+.el-button {
+  color: white;
+  background-color: #454545;
+}
+
+/* Custom màu chữ cho input, textarea */
+.el-input__inner,
+.el-textarea__inner {
+  color: white;
+  background-color: transparent;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.el-input__inner::placeholder,
+.el-textarea__inner::placeholder {
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .send-mail-button {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
+  bottom: 24px;
+  right: 24px;
   z-index: 1000;
+  box-shadow: none;
+  transition: transform 0.2s ease;
+  background-color: rgba(0, 122, 255, 0.9);
+  color: white;
+}
+
+.send-mail-button:hover {
+  transform: scale(1.05);
+}
+
+h2,
+h3,
+p,
+span,
+small {
+  color: white !important;
+  font-weight: 500;
+  background-color: transparent !important;
+}
+
+pre {
+  font-family: "Roboto Mono", monospace;
+  font-size: 14px;
+  color: white;
+  background-color: transparent !important;
+}
+
+.el-dialog__header,
+.el-dialog__body,
+.el-dialog__footer {
+  background-color: transparent !important;
+  border: none;
+  color: white;
+}
+
+.el-dialog {
+  background-color: transparent !important;
+  box-shadow: none !important;
+  color: white;
 }
 </style>

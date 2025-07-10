@@ -39,6 +39,7 @@ body,
   font-family: Roboto, -apple-system, BlinkMacSystemFont, Helvetica, Arial,
     sans-serif;
   font-weight: 400;
+  color: white; /* ✅ Toàn bộ chữ trắng mặc định */
 }
 
 #windows {
@@ -49,6 +50,11 @@ body,
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  background-image: url(~@/assets/bg6.jpg);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  color: white; /* ✅ Tất cả nội dung con bên trong cũng trắng */
 }
 
 #top-bar {
@@ -58,12 +64,13 @@ body,
 
 #main-windows {
   flex: 1;
-  height: 95vh;
-  // transform: translateY(7vh);
-  overflow: visible;
+  height: calc(100vh - 10vh);
+  overflow: hidden !important;
+  position: relative;
+  color: white; /* ✅ Chữ bên trong router-view trắng */
 }
 
 [id] {
-  scroll-margin-top: 80px; /* điều chỉnh theo chiều cao thực tế của TopBar */
+  scroll-margin-top: 80px;
 }
 </style>
