@@ -54,6 +54,7 @@
 </template>
 
 <script>
+import axios from "axios";
 import { login, getCurrentUser } from "@/api/auth";
 import Cookies from "js-cookie";
 import { mapMutations } from "vuex";
@@ -166,44 +167,58 @@ export default {
     },
   },
   mounted() {
+    // Lắng nghe message từ popup (đã đúng rồi, giữ nguyên)
+    window.addEventListener("message", async (event) => {
+      if (event.data?.type === "LAOID_LOGIN_SUCCESS") {
+        const token = event.data.token;
+        console.log("✅ Nhận JWT từ popup:", token);
+
+        Cookies.set("token", token);
+        axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
+        try {
+          const userRes = await axios.get("http://localhost:8000/auth/me");
+          const user = userRes.data.user;
+
+          this.setAuthenticated(true);
+          this.setUser(user);
+
+          const password = prompt(
+            "Nhập mật khẩu email để sử dụng gửi/nhận thư:"
+          );
+          if (password) {
+            await axios.post("http://localhost:8000/auth/imap-auth", {
+              password,
+            });
+          }
+
+          this.$router.replace({ name: "HomeView" });
+        } catch (err) {
+          console.error("❌ Lỗi xử lý token từ popup:", err);
+          this.$message.error("Lỗi xác thực LaoID");
+        }
+      }
+    });
+
+    // 👇 Tải script LaoID và khởi tạo
     const script = document.createElement("script");
     script.src = "https://demo-sso.tinasoft.io/laoid.auth.js";
     script.async = true;
-    document.body.appendChild(script);
+    script.onload = () => {
+      if (window.initializeSSO) {
+        window.initializeSSO();
 
-    this.$nextTick(() => {
-      const retrySSO = () => {
-        console.log("⏳ Thử lại gọi initializeSSO sau 500ms...");
-        if (window.initializeSSO) {
-          window.initializeSSO();
-        }
-      };
-
-      const tryBindSSO = () => {
+        // 👇 Gắn thủ công lại nếu SDK không tự gắn
         const btn = document.getElementById("laoid-signin");
-
         if (btn && window.openSSO) {
-          console.log("✅ Tự gắn openSSO thủ công");
-          btn.removeEventListener("click", window.openSSO);
-          btn.addEventListener("click", window.openSSO);
+          btn.onclick = () => {
+            console.log("🟢 Mở popup đăng nhập LaoID");
+            window.openSSO();
+          };
         }
-      };
-
-      const checkAndInit = () => {
-        const btn = document.getElementById("laoid-signin");
-        if (window.initializeSSO && btn) {
-          console.log("✅ Tìm thấy nút laoid-signin, gọi initializeSSO()");
-          window.initializeSSO();
-          tryBindSSO(); // ép gắn nếu SDK không gắn
-          setTimeout(retrySSO, 500); // fallback lần nữa
-        } else {
-          console.warn("⏳ Chưa sẵn sàng, thử lại sau...");
-          setTimeout(checkAndInit, 200);
-        }
-      };
-
-      checkAndInit();
-    });
+      }
+    };
+    document.body.appendChild(script);
   },
 };
 </script>
