@@ -133,6 +133,7 @@ import {
   downloadAttachment,
   searchMails,
 } from "@/api/auth";
+import { mailWebSocket } from "@/api/websocket";
 import { Plus } from "@element-plus/icons-vue";
 import Cookies from "js-cookie";
 
@@ -159,6 +160,7 @@ export default {
       attachedFiles: [],
       searchKeyword: "",
       isSearching: false,
+      socket: null,
     };
   },
   async mounted() {
@@ -166,12 +168,35 @@ export default {
       this.user = await getCurrentUser();
       console.log("✅ Current user:", this.user);
       await this.loadMailList();
+      this.initializeWebSocket();
     } catch (e) {
       console.error("❌ Lỗi tải user/mail:", e);
       this.$message.error("Lỗi tải hộp thư");
     }
   },
+  beforeUnmount() {
+    if (this.socket) {
+      mailWebSocket.disconnect();
+    }
+  },
   methods: {
+    initializeWebSocket() {
+      mailWebSocket.connect(() => {
+        this.handleNewEmail();
+      });
+    },
+    
+    async handleNewEmail() {
+      if (!this.isSearching) {
+        await this.loadMailList();
+        this.$notify({
+          title: '📨 Email mới',
+          message: 'Bạn vừa nhận được email mới',
+          type: 'success',
+          position: 'bottom-right'
+        });
+      }
+    },
     async loadMailList() {
       try {
         const mails = await getMailList();
